@@ -24,7 +24,7 @@ The corresponding ESPhome configuration file, which includes the required `outpu
 A custom stand was designed to house the board, providing stability and a clean desktop look.
 
 * **FreeCAD Design Source:** [`esp32s3-ePaper-stand.FCStd`](esp32s3-ePaper-stand.FCStd)
-* **Ready-to-Print STL:** [Download STL File](esp32s3-ePaper-stand.stl)
+* **Ready-to-Print STL:** [Download STL File](https://www.thingiverse.com/thing:7218922)
 * **Finished Product:** [`photo01`](esp32s3-ePaper-stand.jpg)
 
 ## Resources
