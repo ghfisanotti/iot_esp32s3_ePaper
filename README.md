@@ -25,7 +25,7 @@ A custom stand was designed to house the board, providing stability and a clean 
 
 * **FreeCAD Design Source:** [`esp32s3-ePaper-stand.FCStd`](esp32s3-ePaper-stand.FCStd)
 * **Ready-to-Print STL:** [Download STL File](esp32s3-ePaper-stand.stl)
-* **Finished Product:** !(esp32s3-ePaper-stand.jpg)
+* **Finished Product:** [`esp32s3-ePaper-stand.jpg`]
 
 ## Resources
 
