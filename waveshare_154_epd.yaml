@@ -21,14 +21,14 @@ logger:
 
 api:
   encryption:
-    key: "mLBU7EOr5Z8rTQFDuwNwVB2CRnwSQ2oK53d4s6msTww="
+    key: "xxxxxxxxxxxxxxxxxxxxxxxxxnwSQ2oK53d4s6msTww="
   on_client_connected:
     - display.page.show: pg_main
     - component.update: my_display
 
 ota:
   - platform: esphome
-    password: "fbf9579d796ebb9a1610ac6e35741145"
+    password: "xxxxxxxxxxxxxxxxxxxxxxxxn5741145"
 
 wifi:
   ssid: !secret wifi_ssid
@@ -42,7 +42,7 @@ wifi:
 
   ap:
     ssid: "Esp32Eink Fallback Hotspot"
-    password: "cIxc2eqnrfzE"
+    password: "xxxxxxxxxxzE"
 
 captive_portal:
 
@@ -68,7 +68,7 @@ display:
     model: 1.54inv2 # 200x200 pixels
     cs_pin: GPIO11 # CS (Chip Select)
     dc_pin: GPIO10 # DC (Data/Command)
-    busy_pin: GPIO8 # BUSY pin (required to check when the display is ready)
+    busy_pin: GPIO8 # BUSY pin 
     reset_pin: GPIO9 # RST (Reset)
     update_interval: 300s
     reset_duration: 2ms
@@ -78,7 +78,6 @@ display:
     pages:
       - id: pg_offline
         lambda: |-
-          //it.filled_rectangle(0, 0, 200, 200, COLOR_OFF);
           it.printf(100, 100, id(font_24), TextAlign::CENTER, "Starting");
       - id: pg_main
         lambda: |-
@@ -93,7 +92,6 @@ display:
       - id: pg_off
         lambda: |-
           it.filled_rectangle(0, 0, 200, 200, COLOR_OFF);
-          //it.printf(100, 100, id(font_36), TextAlign::CENTER, "OFF");
 
 font:
   - file: "fonts/LiberationMono-Bold.ttf" 
@@ -144,11 +142,9 @@ binary_sensor:
 time:
   - platform: homeassistant
     id: time_comp
-    #timezone: "UTC+3"  
     timezone: "America/Argentina/Buenos_Aires"
     on_time_sync:
       then:
-        # ... and update the RTC when the synchronization was successful
         pcf85063.write_time:
   - platform: pcf85063
     id: time_rtc
@@ -171,6 +167,3 @@ sensor:
     filters:
       - multiply: 2.02
 
-#deep_sleep:
-#  sleep_duration: 30s 
-#  run_duration: 60s
