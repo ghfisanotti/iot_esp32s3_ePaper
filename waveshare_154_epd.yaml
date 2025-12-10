@@ -1,14 +1,24 @@
 # This YAML describes a Waveshare ESP32S3-ePaper-1.54 development board
-# Author: GHF - Nov-2025
+# Author: GHF - Dec-2025
+# Deep sleep and power control:
+#   - if dev is off (blank screen and green LED off): Press Power button and hold for more than 3 secs
+#   - if dev is on (green LED is on): Press Power button once and dev will turn off completely
+#   - if dev is in deep sleep (green LED is off, screen shows data): Press Power button to wake up from sleep
 #
 esphome:
   name: esp32eink
   friendly_name: esp32eink
   on_boot:
     then:
-      - pcf85063.read_time: # read the RTC time once when the system boots
       - output.turn_on: vbat_power_enable # "connect" battery
       - output.turn_on: epd_power_enable # turn ePaper display on
+      - light.turn_on: green_led
+  on_shutdown: 
+    then:
+      - lambda: |- # GHF: This is required for the battery to keep connected during deep_sleep
+          gpio_hold_en(GPIO_NUM_17);
+      - component.update: my_display
+      - delay: 3s
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -21,14 +31,15 @@ logger:
 
 api:
   encryption:
-    key: "xxxxxxxxxxxxxxxxxxxxxxxxxnwSQ2oK53d4s6msTww="
+    key: "mLBU7EOr5Z8rTQFDuwNwVB2CRnwSQ2oK53d4s6msTww="
   on_client_connected:
     - display.page.show: pg_main
+    - delay: 5s
     - component.update: my_display
 
 ota:
   - platform: esphome
-    password: "xxxxxxxxxxxxxxxxxxxxxxxxn5741145"
+    password: "fbf9579d796ebb9a1610ac6e35741145"
 
 wifi:
   ssid: !secret wifi_ssid
@@ -42,7 +53,7 @@ wifi:
 
   ap:
     ssid: "Esp32Eink Fallback Hotspot"
-    password: "xxxxxxxxxxzE"
+    password: "cIxc2eqnrfzE"
 
 captive_portal:
 
@@ -51,9 +62,23 @@ output:
     pin: GPIO6 # EPD3V3_EN pin GHF: Required by the ePaper display!!!
     id: epd_power_enable
     inverted: True
+    
   - platform: gpio
-    pin: GPIO17 # BATT_Control pin GHF: Required by the battery to work!!!
+    pin: 
+      number: GPIO17 # BATT_Control pin GHF: Required by the battery to work!!!
+      #allow_other_uses: True # GHF: Required here cause it is used in deep sleep as wakeup pin
     id: vbat_power_enable
+    
+  - platform: gpio
+    pin: GPIO3
+    id: green_led_pin
+    inverted: True
+
+light:
+  - platform: binary
+    output: green_led_pin
+    id: green_led
+    name: green_led
 
 spi:
   clk_pin: GPIO12 # SCK
@@ -68,18 +93,18 @@ display:
     model: 1.54inv2 # 200x200 pixels
     cs_pin: GPIO11 # CS (Chip Select)
     dc_pin: GPIO10 # DC (Data/Command)
-    busy_pin: GPIO8 # BUSY pin 
+    busy_pin: GPIO8 # BUSY pin (required to check when the display is ready)
     reset_pin: GPIO9 # RST (Reset)
-    update_interval: 300s
+    update_interval: never
     reset_duration: 2ms
     full_update_every: 1
     rotation: 90
     id: my_display
     pages:
-      - id: pg_offline
+      - id: pg_offline # this page is shown by default initially
         lambda: |-
           it.printf(100, 100, id(font_24), TextAlign::CENTER, "Starting");
-      - id: pg_main
+      - id: pg_main # this page is show once connected to HomeAssistant
         lambda: |-
           it.filled_rectangle(0, 0, 200, 200, COLOR_ON);
           it.filled_rectangle(0, 0, 200, 200, COLOR_OFF);
@@ -87,9 +112,9 @@ display:
           it.printf(100,40,id(font_36), TextAlign::TOP_CENTER, "H:%.1f%%", id(local_humidity).state);
           it.printf(100,80,id(font_36), TextAlign::TOP_CENTER, "B:%.2fV", id(batt_voltage).state);
           it.printf(100,170,id(font_24), TextAlign::CENTER, "WaveShare");
-          it.strftime(0,199, id(font_16), TextAlign::BOTTOM_LEFT, "%Y-%m-%d", id(time_rtc).now());
-          it.strftime(199,199, id(font_16), TextAlign::BOTTOM_RIGHT, "%H:%M", id(time_rtc).now());
-      - id: pg_off
+          it.strftime(0,199, id(font_16), TextAlign::BOTTOM_LEFT, "%Y-%m-%d", id(time_comp).now());
+          it.strftime(199,199, id(font_16), TextAlign::BOTTOM_RIGHT, "%H:%M", id(time_comp).now());
+      - id: pg_off # this page (blank screen) is shown when power button is pressed
         lambda: |-
           it.filled_rectangle(0, 0, 200, 200, COLOR_OFF);
 
@@ -128,13 +153,16 @@ binary_sensor:
         input: true
         pullup: true
       inverted: True
+      allow_other_uses: True  
     id: button_pwr
     on_press: # internally disconnects the battery
       then:
         - display.page.show: pg_off
         - component.update: my_display
+        - lambda: |- # GHF: This is required for the next output.turn_off to work
+            gpio_hold_dis(GPIO_NUM_17);
         - output.turn_off: vbat_power_enable
-        # the rest of this code runs only if USB power is connected
+       # the rest of this code runs only if USB power is connected
         - display.page.show: pg_main 
         - component.update: my_display
         - output.turn_on: vbat_power_enable
@@ -143,16 +171,10 @@ time:
   - platform: homeassistant
     id: time_comp
     timezone: "America/Argentina/Buenos_Aires"
-    on_time_sync:
-      then:
-        pcf85063.write_time:
-  - platform: pcf85063
-    id: time_rtc
-    update_interval: never
-    timezone: "America/Argentina/Buenos_Aires"
 
 sensor:
   - platform: shtcx
+    update_interval: 10s
     temperature:
       name: "Temperature"
       id: local_temp
@@ -160,6 +182,7 @@ sensor:
       name: "Humidity"
       id: local_humidity
   - platform: adc
+    update_interval: 10s
     pin: GPIO4
     name: "Batt_voltage"
     id: batt_voltage
@@ -167,3 +190,18 @@ sensor:
     filters:
       - multiply: 2.02
 
+button:
+  - platform: template # to force a display update from HomeAssistant
+    name: "display update"
+    on_press: 
+      then:
+        - component.update: my_display
+    
+deep_sleep:
+  id: ds1
+  sleep_duration: 15min 
+  run_duration: 1min
+  wakeup_pin: 
+    number: GPIO18
+    inverted: True
+    allow_other_uses: True  
