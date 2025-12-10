@@ -19,6 +19,8 @@ The corresponding ESPhome configuration file, which includes the required `outpu
 
 * **ESPhome Configuration:** [`waveshare_154_epd.yaml`](waveshare_154_epd.yaml)
 
+This configuration includes functionality to support the included battery, implementing deep sleep (one minute awake, 15min slept) and also complete power off to avoid completely draining the battery during storage of the device. See comments at the beginning of the YAML for details.
+
 ## 3D Printed Stand
 
 A custom stand was designed to house the board, providing stability and a clean desktop look.
