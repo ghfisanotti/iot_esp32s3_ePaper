@@ -19,7 +19,9 @@ The corresponding ESPhome configuration file, which includes the required `outpu
 
 * **ESPhome Configuration:** [`waveshare_154_epd.yaml`](waveshare_154_epd.yaml)
 
-This configuration includes functionality to support the included battery, implementing deep sleep (one minute awake, 15min slept) and also complete power off to avoid completely draining the battery during storage of the device. See comments at the beginning of the YAML for details.
+This configuration includes functionality to support the included battery, implementing deep sleep (30 seconds awake, 30min slept) and also complete power off to avoid completely draining the battery during storage of the device. See comments at the beginning of the YAML for details.
+
+To simplify OTA updates, a switch is defined in the YAML to allow temporarily disabling deep sleep from HomeAssistant; as the device is mostly sleeping, press power button once to wake up and as soon as it is connected to HomeAssistant, toggle the "Deep sleep disabled" swith in the dashboard, it will stay disabled till the switch is toggled again or OTA update is finished and the device is rebooted.
 
 ## 3D Printed Stand
 

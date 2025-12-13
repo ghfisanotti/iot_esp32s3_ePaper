@@ -117,7 +117,11 @@ display:
       - id: pg_off # this page (blank screen) is shown when power button is pressed
         lambda: |-
           it.filled_rectangle(0, 0, 200, 200, COLOR_OFF);
-
+      - id: pg_low_batt # this page is shown before turning off due to batt voltage being too low
+        lambda: |-
+          it.printf(100, 85, id(font_24), TextAlign::CENTER, "Battery");
+          it.printf(100, 115, id(font_24), TextAlign::CENTER, "too low");
+          
 font:
   - file: "fonts/LiberationMono-Bold.ttf" 
     id: font_36
@@ -181,6 +185,7 @@ sensor:
     humidity:
       name: "Humidity"
       id: local_humidity
+
   - platform: adc
     update_interval: 10s
     pin: GPIO4
@@ -189,6 +194,14 @@ sensor:
     attenuation: auto
     filters:
       - multiply: 2.02
+    on_value_range: # turn off if batt voltage is too low (to avoid damaging the battery)
+      - below: 3.4
+        then: 
+          - display.page.show: pg_low_batt
+          - component.update: my_display
+          - lambda: |- # GHF: This is required for the next output.turn_off to work
+              gpio_hold_dis(GPIO_NUM_17);
+          - output.turn_off: vbat_power_enable
 
 button:
   - platform: template # to force a display update from HomeAssistant
@@ -196,11 +209,33 @@ button:
     on_press: 
       then:
         - component.update: my_display
-    
+
+globals:
+  - id: ds_disabled # To keep state of "deep sleep disabled" switch
+    initial_value: 'false'
+    type: bool
+
+switch:
+  - platform: template # To avoid entering deep sleep from HA, for doing OTA, for example
+    name: "Deep sleep disabled"    
+    lambda: |-
+      return id(ds_disabled);
+    turn_on_action: 
+      - deep_sleep.prevent: ds1
+      - globals.set: 
+          id: ds_disabled
+          value: 'true'
+    turn_off_action: 
+      - deep_sleep.allow: ds1
+      - globals.set: 
+          id: ds_disabled
+          value: 'false'
+    restore_mode: ALWAYS_OFF
+
 deep_sleep:
   id: ds1
-  sleep_duration: 15min 
-  run_duration: 1min
+  sleep_duration: 30min 
+  run_duration: 30s
   wakeup_pin: 
     number: GPIO18
     inverted: True
